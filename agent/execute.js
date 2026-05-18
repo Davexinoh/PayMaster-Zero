@@ -21,7 +21,7 @@ Return only the raw deliverable. No preamble.`
 
   const groqOutput = groqResponse.choices[0].message.content
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
   const geminiPrompt = `You are a quality synthesis engine for PayMaster Zero, an autonomous AI agent.
 
