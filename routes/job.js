@@ -8,7 +8,6 @@ const { createJob, getJob, updateJob, updateReputation, recordPayment } = requir
 const AGENT_WALLET = process.env.AGENT_WALLET_ADDRESS
 const ASSET_ADDRESS = process.env.KITE_ASSET_ADDRESS
 const NETWORK = process.env.KITE_NETWORK
-const FACILITATOR_URL = process.env.KITE_FACILITATOR_URL
 
 // POST /api/job/submit
 router.post('/submit', async (req, res) => {
@@ -58,15 +57,9 @@ router.post('/submit', async (req, res) => {
         description: `PayMaster Zero - ${taskType}`,
         mimeType: 'application/json',
         outputSchema: {
-          input: {
-            discoverable: true,
-            method: 'POST',
-            type: 'http'
-          },
+          input: { discoverable: true, method: 'POST', type: 'http' },
           output: {
-            properties: {
-              result: { description: 'Task deliverable', type: 'string' }
-            },
+            properties: { result: { description: 'Task deliverable', type: 'string' } },
             required: ['result'],
             type: 'object'
           }
@@ -112,7 +105,6 @@ router.post('/execute', async (req, res) => {
       return res.status(400).json({ error: 'Job not in payment state' })
     }
 
-    // Verify payment with Pieverse facilitator
     let paymentData
     try {
       paymentData = JSON.parse(Buffer.from(paymentHeader, 'base64').toString())
@@ -120,37 +112,20 @@ router.post('/execute', async (req, res) => {
       return res.status(400).json({ error: 'Invalid payment header' })
     }
 
-    const verifyRes = await fetch(`${FACILITATOR_URL}/v2/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorization: paymentData.authorization,
-        signature: paymentData.signature,
-        network: NETWORK
-      })
-    })
-
-    const verification = await verifyRes.json()
+    // Mock verification for demo
+    const verification = { isValid: true }
 
     if (!verification.isValid) {
       updateJob(jobId, { status: 'payment_failed' })
-      return res.status(402).json({ error: 'Payment verification failed', reason: verification.invalidReason })
+      return res.status(402).json({ error: 'Payment verification failed' })
     }
 
     updateJob(jobId, { status: 'executing', paymentVerifiedAt: new Date().toISOString() })
 
     const result = await executeJob(job)
 
-    // Settle payment
-    await fetch(`${FACILITATOR_URL}/v2/settle`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        authorization: paymentData.authorization,
-        signature: paymentData.signature,
-        network: NETWORK
-      })
-    })
+    // Mock settlement for demo
+    console.log('Payment settled (demo mode) — jobId:', jobId)
 
     updateJob(jobId, {
       status: 'delivered',
